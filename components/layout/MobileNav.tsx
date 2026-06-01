@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Activity, Settings } from 'lucide-react';
+import { LayoutGrid, Activity, Settings, SquarePen, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function MobileNav() {
@@ -10,6 +10,8 @@ export function MobileNav() {
 
   const items = [
     { href: '/projects', label: 'Projects', icon: LayoutGrid },
+    { href: '/brief', label: 'Brief', icon: SquarePen },
+    { href: '/pipeline', label: 'Pipeline', icon: Zap },
     { href: '/activity', label: 'Activity', icon: Activity },
     { href: '/settings', label: 'Settings', icon: Settings },
   ];

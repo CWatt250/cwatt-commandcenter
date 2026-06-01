@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Settings, Plus, Folder } from 'lucide-react';
+import { Activity, Settings, Plus, Folder, SquarePen, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectTaskCounts } from '@/hooks/useProjectTaskCounts';
@@ -94,6 +94,18 @@ export function Sidebar() {
         <div className="mt-6">
           <SectionLabel>Navigation</SectionLabel>
           <ul className="mt-2 space-y-0.5">
+            <SidebarLink
+              href="/brief"
+              icon={<SquarePen className="h-4 w-4" />}
+              label="Brief Builder"
+              active={pathname === '/brief'}
+            />
+            <SidebarLink
+              href="/pipeline"
+              icon={<Zap className="h-4 w-4" />}
+              label="Pipeline"
+              active={pathname === '/pipeline'}
+            />
             <SidebarLink
               href="/activity"
               icon={<Activity className="h-4 w-4" />}
