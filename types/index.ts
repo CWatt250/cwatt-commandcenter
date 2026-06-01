@@ -8,6 +8,7 @@ export interface Project {
   description: string | null;
   repo_url: string | null;
   repo_name: string | null;
+  default_branch: string | null;
   color: string;
   icon: string;
   sort_order: number;
@@ -43,6 +44,15 @@ export interface ActivityLog {
   action: string;
   details: Record<string, unknown>;
   created_at: string;
+}
+
+export type PrState = 'open' | 'merged' | 'closed';
+
+export interface GitHubStatus {
+  connected: boolean;
+  login?: string | null;
+  scope?: string | null;
+  connected_at?: string | null;
 }
 
 export const KANBAN_COLUMNS: { id: TaskStatus; label: string; description: string }[] = [

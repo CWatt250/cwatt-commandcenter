@@ -4,7 +4,14 @@ import { updateSession } from '@/lib/supabase/middleware';
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith('/api/hermes')) {
+  // Hermes API (static-key auth), the GitHub webhook (signature auth), and the
+  // GitHub OAuth handshake must not be redirected to /auth — they have no
+  // Supabase session. Each enforces its own auth.
+  if (
+    pathname.startsWith('/api/hermes') ||
+    pathname.startsWith('/api/webhooks') ||
+    pathname.startsWith('/api/github/oauth')
+  ) {
     return NextResponse.next();
   }
 
