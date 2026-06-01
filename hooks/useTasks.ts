@@ -64,7 +64,7 @@ export function useTasks(projectId: string | undefined) {
     load();
 
     const channel = supabase
-      .channel(`tasks:${projectId}`)
+      .channel(`tasks:${projectId}:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {

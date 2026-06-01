@@ -42,7 +42,7 @@ export function useActiveAgents() {
     load();
 
     const channel = supabase
-      .channel('active-agents')
+      .channel(`active-agents-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'tasks' },

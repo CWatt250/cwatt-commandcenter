@@ -39,7 +39,7 @@ export function useProjects() {
     load();
 
     const channel = supabase
-      .channel('projects-changes')
+      .channel(`projects-changes-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'projects' },

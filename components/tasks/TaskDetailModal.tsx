@@ -68,7 +68,7 @@ export function TaskDetailModal({
     load();
 
     const channel = supabase
-      .channel(`task-activity:${task.id}`)
+      .channel(`task-activity:${task.id}:${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {

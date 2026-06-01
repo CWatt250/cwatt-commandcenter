@@ -85,7 +85,7 @@ export function useActivityLog(projectId?: string | null) {
     const supabase = createClient();
 
     const channel = supabase
-      .channel('activity-log-stream')
+      .channel(`activity-log-stream-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'activity_log' },
