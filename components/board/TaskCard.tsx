@@ -1,10 +1,11 @@
 'use client';
 
 import { useDraggable } from '@dnd-kit/core';
-import { ExternalLink, GripVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import { cn, formatRelative } from '@/lib/utils';
 import { PRIORITY_COLORS } from '@/types';
 import type { Task } from '@/types';
+import { PrStatusBadge } from '@/components/github/PrStatusBadge';
 
 export function TaskCard({
   task,
@@ -93,17 +94,7 @@ export function TaskCard({
               {isLocked ? task.claimed_by : formatRelative(task.created_at)}
             </span>
             {task.pr_url && (
-              <a
-                href={task.pr_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-no-card-click="true"
-                className="inline-flex items-center gap-0.5 rounded bg-purple/15 px-1.5 py-0.5 text-purple hover:bg-purple/25"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <ExternalLink className="h-3 w-3" />
-                PR #{task.pr_number ?? '?'}
-              </a>
+              <PrStatusBadge prUrl={task.pr_url} prNumber={task.pr_number} />
             )}
           </div>
         </div>

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Archive, Trash2, KeyRound, LogOut, Eye, EyeOff } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { createClient } from '@/lib/supabase/client';
 import { useProjects } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
+import { GitHubConnection } from '@/components/settings/GitHubConnection';
 import type { Project } from '@/types';
 
 export default function SettingsPage() {
@@ -79,6 +80,15 @@ export default function SettingsPage() {
             var in Vercel, and restart deployments.
           </p>
         </section>
+
+        {/* GitHub */}
+        <Suspense
+          fallback={
+            <div className="mt-6 h-40 animate-pulse rounded-lg border border-border bg-card" />
+          }
+        >
+          <GitHubConnection />
+        </Suspense>
 
         {/* Projects */}
         <section className="mt-6 rounded-lg border border-border bg-card p-5">
