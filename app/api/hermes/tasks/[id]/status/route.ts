@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { validateHermesKey, hermesUnauthorized } from '@/lib/hermes';
+import { updateTaskByPrefix } from '@/lib/hermes-task';
 
 const VALID_STATUSES = ['in_progress', 'pr_review', 'done'] as const;
 type ValidStatus = (typeof VALID_STATUSES)[number];
@@ -35,12 +36,7 @@ export async function PATCH(
   if (branch_name) updates.branch_name = branch_name;
   if (status === 'done') updates.completed_at = new Date().toISOString();
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .maybeSingle();
+  const { data, error } = await updateTaskByPrefix(id, updates, { claimed_by: agent });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!data) return Response.json({ error: 'Task not found' }, { status: 404 });

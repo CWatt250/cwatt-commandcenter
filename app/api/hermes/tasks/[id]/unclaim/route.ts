@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { validateHermesKey, hermesUnauthorized } from '@/lib/hermes';
+import { updateTaskByPrefix } from '@/lib/hermes-task';
 
 export async function POST(
   req: NextRequest,
@@ -21,18 +22,13 @@ export async function POST(
 
   const supabase = createServiceClient();
 
-  // Only release if this agent currently holds the task
-  const { data, error } = await supabase
-    .from('tasks')
-    .update({
-      claimed_by: null,
-      claimed_at: null,
-      status: 'brief_ready',
-    })
-    .eq('id', id)
-    .eq('claimed_by', agent)
-    .select()
-    .maybeSingle();
+  // Only release if this agent currently holds the task.
+  // Uses prefix-aware matching so short (8-char) task IDs still resolve.
+  const { data, error } = await updateTaskByPrefix(
+    id,
+    { claimed_by: null, claimed_at: null, status: 'brief_ready' },
+    { claimed_by: agent },
+  );
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!data) {
