@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { validateHermesKey, hermesUnauthorized } from '@/lib/hermes';
+import { updateTaskByPrefix } from '@/lib/hermes-task';
 
 export async function PATCH(
   req: NextRequest,
@@ -36,12 +37,7 @@ export async function PATCH(
   };
   if (branch_name) updates.branch_name = branch_name;
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', id)
-    .select()
-    .maybeSingle();
+  const { data, error } = await updateTaskByPrefix(id, updates, { claimed_by: agent });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
   if (!data) return Response.json({ error: 'Task not found' }, { status: 404 });

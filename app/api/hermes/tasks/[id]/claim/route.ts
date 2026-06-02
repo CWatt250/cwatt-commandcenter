@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { validateHermesKey, hermesUnauthorized } from '@/lib/hermes';
+import { updateTaskByPrefix } from '@/lib/hermes-task';
 
 export async function POST(
   req: NextRequest,
@@ -21,19 +22,17 @@ export async function POST(
 
   const supabase = createServiceClient();
 
-  // Atomic claim — only updates if not already claimed and status is brief_ready
-  const { data, error } = await supabase
-    .from('tasks')
-    .update({
+  // Atomic claim — only updates if not already claimed and status is brief_ready.
+  // Uses prefix-aware matching so short (8-char) task IDs still resolve.
+  const { data, error } = await updateTaskByPrefix(
+    id,
+    {
       claimed_by: agent,
       claimed_at: new Date().toISOString(),
       status: 'in_progress',
-    })
-    .eq('id', id)
-    .is('claimed_by', null)
-    .eq('status', 'brief_ready')
-    .select()
-    .maybeSingle();
+    },
+    { claimed_by: null, status: 'brief_ready' },
+  );
 
   if (error) {
     return Response.json({ success: false, error: error.message }, { status: 500 });
@@ -54,5 +53,5 @@ export async function POST(
     details: { agent },
   });
 
-  return Response.json({ success: true, task: data });
+  return Response.json({ success: true, task: data, task_uuid: data.id });
 }

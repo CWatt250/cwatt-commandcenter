@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
 
   const tasks = (data as unknown as Row[]).map((t) => ({
     id: t.id,
+    task_uuid: t.id, // explicit full UUID for use in subsequent PATCH calls
     project_id: t.project_id,
     project_slug: t.project?.slug ?? null,
     project_name: t.project?.name ?? null,
