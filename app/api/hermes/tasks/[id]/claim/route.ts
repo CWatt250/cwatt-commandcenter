@@ -22,6 +22,14 @@ export async function POST(
 
   const supabase = createServiceClient();
 
+  // Derive which agent actually claimed the task from its worker-name prefix.
+  // `nexus-*` → local Nexus; `hermes-worker-*` → Claude Code worker.
+  const agentType: 'nexus' | 'claude-code' | null = agent.startsWith('nexus-')
+    ? 'nexus'
+    : agent.startsWith('hermes-worker-')
+      ? 'claude-code'
+      : null;
+
   // Atomic claim — only updates if not already claimed and status is brief_ready.
   // Uses prefix-aware matching so short (8-char) task IDs still resolve.
   const { data, error } = await updateTaskByPrefix(
@@ -30,6 +38,7 @@ export async function POST(
       claimed_by: agent,
       claimed_at: new Date().toISOString(),
       status: 'in_progress',
+      agent_type: agentType,
     },
     { claimed_by: null, status: 'brief_ready' },
   );

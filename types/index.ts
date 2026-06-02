@@ -26,6 +26,8 @@ export interface Task {
   priority: TaskPriority;
   claimed_by: string | null;
   claimed_at: string | null;
+  agent_preference: 'auto' | 'nexus' | 'claude-code';
+  agent_type: 'nexus' | 'claude-code' | null;
   branch_name: string | null;
   pr_url: string | null;
   pr_number: number | null;

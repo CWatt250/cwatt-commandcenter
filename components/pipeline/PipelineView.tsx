@@ -70,21 +70,24 @@ const SIZE: Record<string, { w: number; h: number }> = {
   mergedNode: { w: 150, h: 60 },
 };
 
-// Raise the alpha of an `rgba(r,g,b,a)` stroke so active edges read brighter.
-function brighten(stroke?: string): string | undefined {
+// Rewrite the alpha of an `rgba(r,g,b,a)` stroke to a fixed value, so an edge
+// can be re-styled brighter (active) or dimmer (travelled) than its base.
+function setAlpha(stroke: string | undefined, alpha: number): string | undefined {
   if (!stroke) return stroke;
   return stroke.replace(
     /rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)/,
-    'rgba($1,$2,$3,0.9)'
+    `rgba($1,$2,$3,${alpha})`
   );
 }
 
 export function PipelineView({
   nodeActivity,
   activeEdges,
+  traveledEdges,
 }: {
   nodeActivity: Record<string, Task[]>;
   activeEdges: string[];
+  traveledEdges: string[];
 }) {
   const nodes = useMemo<Node[]>(
     () =>
@@ -102,20 +105,29 @@ export function PipelineView({
 
   const edges = useMemo<Edge[]>(() => {
     const active = new Set(activeEdges);
-    return BASE_EDGES.map((e) =>
-      active.has(e.id)
-        ? {
-            ...e,
-            animated: true,
-            style: {
-              ...e.style,
-              stroke: brighten(e.style?.stroke as string | undefined),
-              strokeWidth: ((e.style?.strokeWidth as number) ?? 1.5) + 0.5,
-            },
-          }
-        : e
-    );
-  }, [activeEdges]);
+    const traveled = new Set(traveledEdges);
+    return BASE_EDGES.map((e) => {
+      const stroke = e.style?.stroke as string | undefined;
+      const width = (e.style?.strokeWidth as number) ?? 1.5;
+      // Current hop — brightest and animated so the dash visibly flows.
+      if (active.has(e.id)) {
+        return {
+          ...e,
+          animated: true,
+          style: { ...e.style, stroke: setAlpha(stroke, 0.95), strokeWidth: width + 0.8 },
+        };
+      }
+      // Already-travelled segment — kept dimly lit, no flow, to show the route.
+      if (traveled.has(e.id)) {
+        return {
+          ...e,
+          animated: false,
+          style: { ...e.style, stroke: setAlpha(stroke, 0.5), strokeWidth: width + 0.2 },
+        };
+      }
+      return e;
+    });
+  }, [activeEdges, traveledEdges]);
 
   return (
     <ReactFlowProvider>
