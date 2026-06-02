@@ -7,12 +7,14 @@ import { AppShell } from '@/components/layout/AppShell';
 import { NewProjectModal } from '@/components/projects/NewProjectModal';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectTaskCounts } from '@/hooks/useProjectTaskCounts';
+import { useProjectWikiCounts } from '@/hooks/useProjectWikiCounts';
 import { KANBAN_COLUMNS, STATUS_COLORS } from '@/types';
 import type { TaskStatus } from '@/types';
 
 export default function ProjectsPage() {
   const { projects, loading } = useProjects();
   const { counts } = useProjectTaskCounts();
+  const { counts: wikiCounts } = useProjectWikiCounts();
   const [modalOpen, setModalOpen] = useState(false);
 
   if (loading) {
@@ -75,6 +77,7 @@ export default function ProjectsPage() {
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
             const c = counts[p.id];
+            const wiki = wikiCounts[p.id] ?? 0;
             return (
               <Link
                 key={p.id}
@@ -110,6 +113,14 @@ export default function ProjectsPage() {
                   </p>
                 )}
                 <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+                  {wiki > 0 && (
+                    <span
+                      title={`${wiki} project memory ${wiki === 1 ? 'entry' : 'entries'}`}
+                      className="rounded bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+                    >
+                      🧠 {wiki} memory
+                    </span>
+                  )}
                   {KANBAN_COLUMNS.map((col) => {
                     const n = c?.[col.id as TaskStatus] ?? 0;
                     if (n === 0) return null;

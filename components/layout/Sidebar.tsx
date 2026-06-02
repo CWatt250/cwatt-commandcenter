@@ -7,6 +7,7 @@ import { Activity, Settings, Plus, Folder, SquarePen, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectTaskCounts } from '@/hooks/useProjectTaskCounts';
+import { useProjectWikiCounts } from '@/hooks/useProjectWikiCounts';
 import { useActiveAgents } from '@/hooks/useActiveAgents';
 import { NewProjectModal } from '@/components/projects/NewProjectModal';
 
@@ -14,6 +15,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { projects, loading } = useProjects();
   const { counts } = useProjectTaskCounts();
+  const { counts: wikiCounts } = useProjectWikiCounts();
   const agents = useActiveAgents();
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -50,6 +52,7 @@ export function Sidebar() {
           {projects.map((p) => {
             const active = activeSlug === p.slug;
             const open = counts[p.id]?.open ?? 0;
+            const wiki = wikiCounts[p.id] ?? 0;
             return (
               <li key={p.id}>
                 <Link
@@ -65,6 +68,14 @@ export function Sidebar() {
                     {p.icon}
                   </span>
                   <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                  {wiki > 0 && (
+                    <span
+                      title={`${wiki} project memory ${wiki === 1 ? 'entry' : 'entries'}`}
+                      className="font-mono text-[10px] text-faint"
+                    >
+                      🧠 {wiki}
+                    </span>
+                  )}
                   {open > 0 && (
                     <span
                       className="rounded px-1.5 py-0.5 text-[10px] font-mono"
