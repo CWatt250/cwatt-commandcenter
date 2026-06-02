@@ -17,7 +17,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
-const ICONS = ['📁', '⚡', '🏢', '🗺️', '🎯', '🔧', '🚀', '💡', '🔨', '🌐'];
+const ICONS = [
+  '📁', '⚡', '🏢', '🗺️', '🎯', '🔧', '🚀', '💡', '🔨', '🌐',
+  '🌱', '🔥', '📋', '💼', '🏗️', '🛡️', '📊', '🤖', '🧪', '🔬',
+  '💰', '🏠', '🚗', '✈️', '🎮', '📱', '🖥️', '🔐', '📡', '⚙️',
+];
 const COLORS = [
   '#F59E0B',
   '#3B82F6',
