@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Circle,
@@ -15,6 +15,12 @@ import { AppShell } from '@/components/layout/AppShell';
 import { useProjects } from '@/hooks/useProjects';
 import { useActivityLog } from '@/hooks/useActivityLog';
 import type { EnrichedActivity } from '@/hooks/useActivityLog';
+import {
+  ActivityFilters,
+  filterActivities,
+  DEFAULT_ACTIVITY_FILTERS,
+  type ActivityFilterState,
+} from '@/components/filters/ActivityFilters';
 import { formatRelative } from '@/lib/utils';
 
 const ACTION_META: Record<
@@ -65,6 +71,13 @@ export default function ActivityPage() {
   const { events, loading, hasMore, loadMore } = useActivityLog(
     filter === 'all' ? null : filter
   );
+  const [chipFilters, setChipFilters] = useState<ActivityFilterState>(
+    DEFAULT_ACTIVITY_FILTERS
+  );
+  const filteredEvents = useMemo(
+    () => filterActivities(events, chipFilters),
+    [events, chipFilters]
+  );
 
   return (
     <AppShell>
@@ -85,6 +98,10 @@ export default function ActivityPage() {
           </select>
         </div>
 
+        <div className="mt-5">
+          <ActivityFilters value={chipFilters} onChange={setChipFilters} />
+        </div>
+
         <div className="mt-8 max-w-3xl">
           {loading && (
             <div className="space-y-2">
@@ -101,8 +118,12 @@ export default function ActivityPage() {
             <p className="text-sm text-faint">No activity yet.</p>
           )}
 
+          {!loading && events.length > 0 && filteredEvents.length === 0 && (
+            <p className="text-sm text-faint">No activity matches these filters.</p>
+          )}
+
           <ul className="relative space-y-3 pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-border">
-            {events.map((e) => {
+            {filteredEvents.map((e) => {
               const meta = ACTION_META[e.action] ?? {
                 label: (x: EnrichedActivity) => `${x.actor} → ${x.action}`,
                 icon: Circle,
