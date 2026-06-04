@@ -55,13 +55,11 @@ function nodeForTask(t: Task, now: number): string | null {
     case 'in_progress': {
       if (agentSide(t) === 'nexus') return hasUiTag(t) ? 'n_qa' : 'n_work';
       if (hasUiTag(t)) return 'c_push';
-      // Claude path advances Preflight → Worker → Git+PR over time.
-      const elapsed = t.claimed_at
-        ? now - new Date(t.claimed_at).getTime()
-        : 0;
-      if (elapsed < 90_000) return 'c_pre';
-      if (elapsed < 300_000) return 'c_work';
-      return 'c_push';
+      // Claude path reflects real task data, not a timer: the pill only moves
+      // when Supabase fields actually change.
+      if (t.pr_url) return 'c_push'; // Git + PR — a PR exists
+      if (t.branch_name) return 'c_work'; // CC Worker — branch pushed
+      return 'c_pre'; // Preflight — claimed, no branch yet
     }
     case 'pr_review':
       return 'review';
@@ -131,8 +129,6 @@ function routeForTask(
 export function usePipelineData(): PipelineData {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  // Ticks every 15s so time-based Claude sub-stage progression stays live.
-  const [tick, setTick] = useState(0);
   const { events: recentActivity } = useActivityLog();
 
   useEffect(() => {
@@ -225,11 +221,6 @@ export function usePipelineData(): PipelineData {
     };
   }, []);
 
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 15_000);
-    return () => clearInterval(id);
-  }, []);
-
   const { nodeActivity, activeEdges, traveledEdges, stats } = useMemo(() => {
     const now = Date.now();
     const activity: Record<string, Task[]> = {};
@@ -263,9 +254,7 @@ export function usePipelineData(): PipelineData {
         completed: count(['merged']),
       },
     };
-    // tick drives time-based re-evaluation
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks, tick]);
+  }, [tasks]);
 
   return {
     nodeActivity,

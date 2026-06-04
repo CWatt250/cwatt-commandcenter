@@ -70,6 +70,12 @@ const SIZE: Record<string, { w: number; h: number }> = {
   mergedNode: { w: 150, h: 60 },
 };
 
+// Completion timestamp in ms (0 if missing), used to rank overlapping
+// completed pills so the most recently merged renders on top.
+function completedTs(t: Task): number {
+  return t.completed_at ? new Date(t.completed_at).getTime() : 0;
+}
+
 // Rewrite the alpha of an `rgba(r,g,b,a)` stroke to a fixed value, so an edge
 // can be re-styled brighter (active) or dimmer (travelled) than its base.
 function setAlpha(stroke: string | undefined, alpha: number): string | undefined {
@@ -178,6 +184,7 @@ function PillsOverlay({
       nodeId: string;
       left: number;
       top: number;
+      zIndex: number;
     }[] = [];
     for (const node of BASE_NODES) {
       const tasks = nodeActivity[node.id];
@@ -185,6 +192,17 @@ function PillsOverlay({
       const size = SIZE[node.type ?? 'mainNode'];
       const cx = node.position.x + size.w / 2;
       const cy = node.position.y + size.h / 2;
+      // Completed pills overlap at the merged node, so the most recently
+      // completed task must stack on top of older ones (higher z = more
+      // recent). Rank by completed_at; oldest gets 0, newest the highest.
+      const recencyRank =
+        node.id === 'merged'
+          ? new Map(
+              [...tasks]
+                .sort((a, b) => completedTs(a) - completedTs(b))
+                .map((t, idx) => [t.id, idx])
+            )
+          : null;
       tasks.forEach((task, i) => {
         // Stack multiple tasks at one node so they don't fully overlap.
         const offset = (i - (tasks.length - 1) / 2) * 18;
@@ -193,6 +211,7 @@ function PillsOverlay({
           nodeId: node.id,
           left: cx * zoom + x,
           top: (cy + offset) * zoom + y,
+          zIndex: 10 + (recencyRank?.get(task.id) ?? 0),
         });
       });
     }
@@ -207,7 +226,7 @@ function PillsOverlay({
           task={p.task}
           nodeId={p.nodeId}
           color={colorForNode(p.nodeId)}
-          style={{ left: p.left, top: p.top }}
+          style={{ left: p.left, top: p.top, zIndex: p.zIndex }}
         />
       ))}
     </div>

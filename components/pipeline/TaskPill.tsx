@@ -29,8 +29,9 @@ export function TaskPill({
   const accent = PILL_COLORS[color];
   return (
     <div
-      className="pointer-events-none absolute z-10 flex max-w-[160px] items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-white shadow-lg"
+      className="pointer-events-none absolute flex max-w-[160px] items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium text-white shadow-lg"
       style={{
+        zIndex: 10,
         ...style,
         transform: 'translate(-50%, -50%)',
         background: 'rgba(10,12,16,0.92)',
