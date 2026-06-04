@@ -235,8 +235,8 @@ supabase/migrations/003_activity_log.sql
 |8    |Brief Builder (Claude API chat)        |✅ Live       |
 |9    |Live Pipeline (React Flow DAG)         |✅ Live       |
 |10   |GitHub Integration (OAuth + Webhooks)  |🔨 In Progress|
-|11   |Telegram Bot (create tasks via message)|📋 Planned    |
-|12   |Agent Memory (Nexus wiki + Mem0 RAG)   |📋 Planned    |
+|11   |Telegram Bot (create tasks via message)|✅ Live       |
+|12   |Agent Memory (Nexus wiki + Mem0 RAG)   |✅ Live       |
 
 -----
 
