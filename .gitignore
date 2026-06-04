@@ -43,5 +43,8 @@ next-env.d.ts
 # supabase CLI local state
 supabase/.temp/
 
+# claude code task runtime logs
+.claude-task-*.log
+
 # vercel
 .vercel
