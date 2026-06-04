@@ -47,6 +47,45 @@ Each task contains:
 
 ---
 
+## Step 1.5: Load Project Memory (Phase 12 — Agent Memory)
+
+**Before** you spawn a Claude Code worker, pull the project's accumulated memory
+so the worker already knows the codebase. Use the task's `project_slug`:
+
+```bash
+curl -s -H "X-Hermes-Key: $COMMANDCENTER_KEY" \
+  "$COMMANDCENTER_URL/api/hermes/projects/$PROJECT_SLUG/context"
+```
+
+Returns:
+- `wiki.markdown` — the full project wiki rendered as a markdown digest, grouped
+  by category (architecture, patterns, gotchas, decisions, stack, files). Drop
+  this straight into the worker's context / system prompt.
+- `wiki.entries[]` — the raw entries if you need them structured.
+- `recent_tasks[]` — the last 5 completed tasks (title, brief, branch, PR).
+- `open_prs[]` — tasks currently in PR review with an open PR.
+
+After the worker **completes** the task (after Step 8), append what it learned
+back to the wiki so the next task starts smarter:
+
+```bash
+curl -s -X POST \
+  -H "X-Hermes-Key: $COMMANDCENTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"category": "decisions", "content": "Switched bid totals to server-side aggregation in lib/totals.ts to fix rounding drift.", "created_by": "nexus"}' \
+  "$COMMANDCENTER_URL/api/hermes/projects/$PROJECT_SLUG/wiki"
+```
+
+- `category` (required) — one of: `architecture`, `patterns`, `gotchas`,
+  `decisions`, `stack`, `files`.
+- `content` (required) — one concise fact/summary. Append-only; one call per fact.
+- `created_by` (optional) — agent name, e.g. `nexus` or `claude-code`. Defaults to `agent`.
+
+Write a wiki entry for anything a future task on this repo would need to know:
+a decision made, a gotcha hit, a pattern to follow, a key file touched.
+
+---
+
 ## Step 2: Claim the Task (Atomic)
 
 Pick the highest priority task first (critical > high > medium > low).

@@ -1,4 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@/lib/supabase/server';
+import { wikiToMarkdown } from '@/lib/wiki';
+import type { ProjectWiki } from '@/types';
 
 // Streaming brief-writer chat. Accepts the full conversation (text + base64
 // image blocks) and streams Claude's reply back as Server-Sent Events.
@@ -8,8 +11,29 @@ import Anthropic from '@anthropic-ai/sdk';
 export const runtime = 'nodejs';
 
 interface BriefProject {
+  id?: string;
   name: string;
   repo_name: string | null;
+}
+
+// Pull the project's memory so Claude already knows the codebase when drafting
+// the brief (Phase 12). Best-effort — a missing id or DB error just yields no
+// memory section rather than failing the chat.
+async function loadProjectMemory(projectId: string | undefined): Promise<string> {
+  if (!projectId) return '';
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('project_wiki')
+      .select('content, category, created_by, created_at')
+      .eq('project_id', projectId);
+    if (error || !data) return '';
+    return wikiToMarkdown(
+      data as Pick<ProjectWiki, 'content' | 'category' | 'created_by' | 'created_at'>[]
+    );
+  } catch {
+    return '';
+  }
 }
 
 export async function POST(req: Request) {
@@ -37,11 +61,16 @@ export async function POST(req: Request) {
 
   const client = new Anthropic({ apiKey });
 
+  const memory = await loadProjectMemory(project?.id);
+  const memorySection = memory
+    ? `\n\nProject memory — what the agents already know about this codebase. Use it so your briefs match existing architecture, patterns, and gotchas. Do NOT restate it back to Colton unless relevant:\n${memory}`
+    : '';
+
   const systemPrompt = `You are a technical brief writer embedded in Cwatt-CommandCenter,
 a software project management tool. Your job is to help Colton (a developer/estimator)
 turn rough ideas into structured task briefs for his AI coding agents.
 
-Current project: ${project?.name ?? 'Unknown'} (repo: ${project?.repo_name ?? 'n/a'})
+Current project: ${project?.name ?? 'Unknown'} (repo: ${project?.repo_name ?? 'n/a'})${memorySection}
 
 Rules:
 - Ask at most ONE clarifying question before writing a brief

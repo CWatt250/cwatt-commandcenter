@@ -180,7 +180,7 @@ export function BriefChat({ project }: { project: Project }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
-          project: { name: project.name, repo_name: project.repo_name },
+          project: { id: project.id, name: project.name, repo_name: project.repo_name },
         }),
       });
 

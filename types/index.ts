@@ -38,6 +38,32 @@ export interface Task {
   completed_at: string | null;
 }
 
+export type WikiCategory =
+  | 'architecture'
+  | 'patterns'
+  | 'gotchas'
+  | 'decisions'
+  | 'stack'
+  | 'files';
+
+export const WIKI_CATEGORIES: WikiCategory[] = [
+  'architecture',
+  'patterns',
+  'gotchas',
+  'decisions',
+  'stack',
+  'files',
+];
+
+export interface ProjectWiki {
+  id: string;
+  project_id: string;
+  content: string;
+  category: WikiCategory;
+  created_by: string;
+  created_at: string;
+}
+
 export interface ActivityLog {
   id: string;
   project_id: string | null;
