@@ -24,10 +24,13 @@ export async function updateTaskByPrefix(
     // Full UUID — exact match
     query = query.eq('id', id);
   } else {
-    // Short prefix — match via starts_with on the text representation.
-    // Use .or() with PostgREST's embedded cast syntax (`id::text`) to
-    // avoid the `uuid ~~ unknown` operator error from LIKE on UUID columns.
-    query = query.or(`id::text.like.${id}%`);
+    // Short prefix — match via UUID range comparison.
+    // UUID columns don't support LIKE, but they do support >= and <=.
+    // By forming a lower/upper bound with the prefix, we get a clean
+    // starts-with match without type casting tricks.
+    const lowerBound = `${id}-00000000-0000-0000-000000000000`;
+    const upperBound = `${id}-ffffffff-ffff-ffff-ffffffffffff`;
+    query = query.gte('id', lowerBound).lte('id', upperBound);
   }
 
   // Apply equality filters (e.g. claimed_by, status)
