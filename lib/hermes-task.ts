@@ -25,9 +25,9 @@ export async function updateTaskByPrefix(
     query = query.eq('id', id);
   } else {
     // Short prefix — match via starts_with on the text representation.
-    // This uses a SQL expression via filter() since Supabase's JS client
-    // doesn't support ilike/startswith on native UUID columns directly.
-    query = query.filter('id', 'like', `${id}%`);
+    // PostgREST supports type casts in filter column names, so `id::text`
+    // lets us use LIKE on a native UUID column.
+    query = query.filter('id::text', 'like', `${id}%`);
   }
 
   // Apply equality filters (e.g. claimed_by, status)
