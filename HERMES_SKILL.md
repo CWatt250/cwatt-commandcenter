@@ -10,9 +10,11 @@ Cwatt-CommandCenter is Colton's mission control dashboard. Tasks are created the
 
 1. Poll for available tasks
 2. Claim one atomically
-3. Spawn a Claude Code worker in the correct repo
-4. Report status back to CommandCenter as work progresses
-5. Notify Colton on Telegram when a PR is ready
+3. Load project memory and prepend it to the brief (before starting)
+4. Spawn a Claude Code worker in the correct repo
+5. Report status back to CommandCenter as work progresses
+6. Write a project memory (wiki) entry after opening the PR
+7. Notify Colton on Telegram when a PR is ready
 
 ---
 
@@ -47,42 +49,30 @@ Each task contains:
 
 ---
 
-## Step 1.5: Load Project Memory (Phase 12 — Agent Memory)
+## Step 1.5: Load Project Memory — BEFORE starting the task (Phase 12 — Agent Memory)
 
 **Before** you spawn a Claude Code worker, pull the project's accumulated memory
 so the worker already knows the codebase. Use the task's `project_slug`:
 
 ```bash
 curl -s -H "X-Hermes-Key: $COMMANDCENTER_KEY" \
-  "$COMMANDCENTER_URL/api/hermes/projects/$PROJECT_SLUG/context"
+  "$COMMANDCENTER_URL/api/hermes/projects/$PROJECT_SLUG/context" > /tmp/project_context.json
+
+# Extract the markdown digest to prepend to the brief in Step 5
+PROJECT_MEMORY=$(jq -r '.wiki.markdown // ""' /tmp/project_context.json)
 ```
 
 Returns:
 - `wiki.markdown` — the full project wiki rendered as a markdown digest, grouped
-  by category (architecture, patterns, gotchas, decisions, stack, files). Drop
-  this straight into the worker's context / system prompt.
+  by category (architecture, patterns, gotchas, decisions, stack, files).
 - `wiki.entries[]` — the raw entries if you need them structured.
 - `recent_tasks[]` — the last 5 completed tasks (title, brief, branch, PR).
 - `open_prs[]` — tasks currently in PR review with an open PR.
 
-After the worker **completes** the task (after Step 8), append what it learned
-back to the wiki so the next task starts smarter:
+**Prepend `wiki.markdown` to the task brief before passing it to Claude Code**
+(see Step 5) so the worker starts with the project's memory already in context.
 
-```bash
-curl -s -X POST \
-  -H "X-Hermes-Key: $COMMANDCENTER_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"category": "decisions", "content": "Switched bid totals to server-side aggregation in lib/totals.ts to fix rounding drift.", "created_by": "nexus"}' \
-  "$COMMANDCENTER_URL/api/hermes/projects/$PROJECT_SLUG/wiki"
-```
-
-- `category` (required) — one of: `architecture`, `patterns`, `gotchas`,
-  `decisions`, `stack`, `files`.
-- `content` (required) — one concise fact/summary. Append-only; one call per fact.
-- `created_by` (optional) — agent name, e.g. `nexus` or `claude-code`. Defaults to `agent`.
-
-Write a wiki entry for anything a future task on this repo would need to know:
-a decision made, a gotcha hit, a pattern to follow, a key file touched.
+The matching write-back happens **after the PR is opened** — see Step 8.5.
 
 ---
 
@@ -140,10 +130,16 @@ curl -s -X PATCH \
 ```bash
 cd ~/repos/$REPO_NAME/.workers/$TASK_ID
 
-# Write brief to a temp file (handles special characters safely)
-cat > /tmp/task_brief.md << 'BRIEF_EOF'
-$TASK_BRIEF
-BRIEF_EOF
+# Build the brief: prepend the project memory from Step 1.5, THEN the task brief
+{
+  echo "## Project Memory (from CommandCenter)"
+  echo "$PROJECT_MEMORY"
+  echo
+  echo "---"
+  echo
+  echo "## Task"
+  echo "$TASK_BRIEF"
+} > /tmp/task_brief.md
 
 # Run Claude Code in print mode
 claude -p "$(cat /tmp/task_brief.md)" \
@@ -204,6 +200,28 @@ curl -s -X PATCH \
   -d "{\"agent\": \"hermes-worker-1\", \"pr_url\": \"$PR_URL\", \"pr_number\": $PR_NUMBER, \"branch_name\": \"$BRANCH\"}" \
   "$COMMANDCENTER_URL/api/hermes/tasks/$TASK_ID/pr"
 ```
+
+---
+
+## Step 8.5: Write Project Memory — AFTER opening the PR (Phase 12 — Agent Memory)
+
+Once the PR is open and reported, append what the worker learned back to the
+project wiki so the next task on this repo starts smarter:
+
+```bash
+curl -s -X POST \
+  -H "X-Hermes-Key: $COMMANDCENTER_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Summary of what was built and why.", "category": "decisions", "created_by": "hermes-worker-1"}' \
+  "$COMMANDCENTER_URL/api/hermes/projects/$PROJECT_SLUG/wiki"
+```
+
+- `content` (required) — one concise summary of what was built and why. Append-only; one call per fact.
+- `category` (required) — one of: `architecture`, `patterns`, `gotchas`, `decisions`, `stack`, `files`. Use `decisions` for build/PR summaries.
+- `created_by` (optional) — the worker name, e.g. `hermes-worker-1`. Defaults to `agent`.
+
+Write an entry for anything a future task on this repo would need to know:
+a decision made, a gotcha hit, a pattern to follow, a key file touched.
 
 ---
 
