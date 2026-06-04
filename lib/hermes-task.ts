@@ -28,8 +28,8 @@ export async function updateTaskByPrefix(
     // UUID columns don't support LIKE, but they do support >= and <=.
     // By forming a lower/upper bound with the prefix, we get a clean
     // starts-with match without type casting tricks.
-    const lowerBound = `${id}-00000000-0000-0000-000000000000`;
-    const upperBound = `${id}-ffffffff-ffff-ffff-ffffffffffff`;
+    const lowerBound = `${id}-0000-0000-0000-000000000000`;
+    const upperBound = `${id}-ffff-ffff-ffff-ffffffffffff`;
     query = query.gte('id', lowerBound).lte('id', upperBound);
   }
 
