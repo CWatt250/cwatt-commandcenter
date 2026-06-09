@@ -1,0 +1,18 @@
+[Unit]
+Description=Hermes Task Poller Worker (nexus)
+After=network-online.target ollama.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cwatt250
+WorkingDirectory=/home/cwatt250/AI_Agent/projects/hermes-worker
+ExecStart=/usr/bin/python3 /home/cwatt250/AI_Agent/projects/hermes-worker/hermes_worker.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
